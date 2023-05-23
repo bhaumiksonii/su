@@ -1,4 +1,4 @@
-import yaml,requests,json
+import yaml,requests,json,logging
 class OktaAwsIntegration:
     def __init__(self) -> None:
         with open(r'D:\Projects\upwork\release\ias_data.yaml', 'r') as file:
@@ -79,15 +79,32 @@ class OktaAwsIntegration:
                 print(f"Group {group['name']} created successfully.")
             else:
                 print(f"Failed to create group {group['name']}. Error: {group_response.text}")
-    def associate_grps_with_okta_application(self):
+    def associate_grps_with_okta_application(self,group_id,app_id):
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": f"SSWS {self.config['OKTA_API_TOKEN']}"
         }
         data = {}
+        url = self.config["OKTA_ORG_URL"] + "/api/v1/apps/{app_id}/groups/{group_id}"
+        response = requests.put(url, headers=headers, json=data)
+        return response
+oi = OktaAwsIntegration()
+logging.basicConfig( level=logging.INFO)
+logging.info('Starting the AWS Okta Integration.')
 
-        response = requests.put(self.config["OKTA_ORG_URL"], headers=headers, json=data)
-        return response['id']
-x = OktaAwsIntegration()
-print(x.config)
+logging.info('Creating New Okta Application.')
+app_id = oi.create_okta_application()
+logging.info('Okta Application Created.')
+
+logging.info('Fetching XML data from the application id.')
+oi.get_xml_data(app_id=app_id)
+logging.info('XML Fetched.')
+
+logging.info('Creating Okta Groups')
+group_id = oi.create_okta_groups()
+logging.info('Okta Group Created.')
+
+logging.info('Association of group to okta application.')
+oi.associate_grps_with_okta_application(group_id=group_id,app_id=app_id)
+logging.info('Group associated with okta application.')
