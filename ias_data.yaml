@@ -1,0 +1,4 @@
+Config:
+  OKTA_ORG_URL: "https://tpd-soe-dev-admin.oktapreview.com"
+  OKTA_API_TOKEN: "00_1IM5nn6011rm0cKotzhJ9fYhC_pyX8NwRG3FXhu"
+  AWS_ACCOUNT: ""
