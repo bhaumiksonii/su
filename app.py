@@ -1,12 +1,14 @@
-import yaml,requests,json,logging
+import yaml,requests,json,logging,os
 class OktaAwsIntegration:
     def __init__(self) -> None:
         with open(r'D:\Projects\upwork\release\ias_data.yaml', 'r') as file:
             self.config = yaml.safe_load(file)
-   
+            # self.account_name = os.environ.get('ACCOUNT_NAME')
+            # self.role_name =  os.environ.get('ROLE_NAME')
+            # self.account_number = os.environ.get('ACCOUNT_NUMBER')
     def create_okta_application(self):
 
-        url = f'{self.config["OKTA_ORG_URL"]}/api/v1/apps'
+        url = f'{self.config["Config"]["OKTA_ORG_URL"]}/api/v1/apps'
     
         data ={
     "name": "bookmark",
@@ -22,21 +24,21 @@ class OktaAwsIntegration:
     }   
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'SSWS {self.config["OKTA_API_TOKEN"]}'
+            'Authorization': f'SSWS {self.config["Config"]["OKTA_API_TOKEN"]}'
         }
         
         response = requests.request('POST', url, headers=headers, data=json.dumps(data))
         
-        return response['id']
+        return response.json()['id']
     def get_xml_data(self,app_id):
 
-        app_id = "0oa80r9mnmlBO3dYt1d7" #hardcoded
-        saml_url = f"{self.config['OKTA_ORG_URL']}/api/v1/apps/{tile_id}/"
+        
+        saml_url = f"{self.config['Config']['OKTA_ORG_URL']}/api/v1/apps/{app_id}/"
         # Set the headers with the API key
         headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': f'SSWS {self.config["OKTA_API_TOKEN"]}'
+        'Authorization': f'SSWS {self.config["Config"]["OKTA_API_TOKEN"]}'
         }
         response = requests.get(saml_url, headers=headers)
         print(headers)
@@ -52,11 +54,11 @@ class OktaAwsIntegration:
             print(tile_info)
         else:
             print("Error retrieving the Tile info:", resp.content)
-    def create_okta_groups(self):
+    def create_okta_groups(self,groups):
         headers = {
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                    "Authorization": f"SSWS {self.config['OKTA_API_TOKEN']}"
+                    "Authorization": f"SSWS {self.config['Config']['OKTA_API_TOKEN']}"
                   }
         groups_to_create = [
                             {"name": "Group1", "description": "Description for Group1"},
@@ -71,7 +73,7 @@ class OktaAwsIntegration:
                                     }
                             }
             group_response = requests.post(
-                f"{self.config['OKTA_ORG_URL']}/api/v1/groups",
+                f"{self.config['Config']['OKTA_ORG_URL']}/api/v1/groups",
                 headers=headers,
                 data=json.dumps(group_payload)
             )
@@ -83,10 +85,10 @@ class OktaAwsIntegration:
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Authorization": f"SSWS {self.config['OKTA_API_TOKEN']}"
+            "Authorization": f"SSWS {self.config['Config']['OKTA_API_TOKEN']}"
         }
         data = {}
-        url = self.config["OKTA_ORG_URL"] + "/api/v1/apps/{app_id}/groups/{group_id}"
+        url = self.config["Config"]["OKTA_ORG_URL"] + f"/api/v1/apps/{app_id}/groups/{group_id}"
         response = requests.put(url, headers=headers, json=data)
         return response
 oi = OktaAwsIntegration()
@@ -95,14 +97,15 @@ logging.info('Starting the AWS Okta Integration.')
 
 logging.info('Creating New Okta Application.')
 app_id = oi.create_okta_application()
+
 logging.info('Okta Application Created.')
 
 logging.info('Fetching XML data from the application id.')
 oi.get_xml_data(app_id=app_id)
 logging.info('XML Fetched.')
-
+groups = "test" #testing purpose
 logging.info('Creating Okta Groups')
-group_id = oi.create_okta_groups()
+group_id = oi.create_okta_groups(groups=groups)
 logging.info('Okta Group Created.')
 
 logging.info('Association of group to okta application.')
