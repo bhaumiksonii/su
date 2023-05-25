@@ -55,17 +55,14 @@ class OktaAwsIntegration:
         else:
             print("Error retrieving the Tile info:", resp.content)
     def create_okta_groups(self,groups):
+        grp_ids = []
         headers = {
                     "Accept": "application/json",
                     "Content-Type": "application/json",
                     "Authorization": f"SSWS {self.config['Config']['OKTA_API_TOKEN']}"
                   }
-        groups_to_create = [
-                            {"name": "Group1", "description": "Description for Group1"},
-                            {"name": "Group2", "description": "Description for Group2"},
-                            {"name": "Group3", "description": "Description for Group3"}
-                           ]
-        for group in groups_to_create:
+        
+        for group in groups:
             group_payload = {
                             "profile": {
                                 "name": group["name"],
@@ -77,20 +74,24 @@ class OktaAwsIntegration:
                 headers=headers,
                 data=json.dumps(group_payload)
             )
+            grp_ids.append(group_response.json()['id']) 
             if group_response.status_code == 200:
                 print(f"Group {group['name']} created successfully.")
+                
             else:
                 print(f"Failed to create group {group['name']}. Error: {group_response.text}")
-    def associate_grps_with_okta_application(self,group_id,app_id):
+        return grp_ids
+    def associate_grps_with_okta_application(self,groups,app_id):
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": f"SSWS {self.config['Config']['OKTA_API_TOKEN']}"
         }
         data = {}
-        url = self.config["Config"]["OKTA_ORG_URL"] + f"/api/v1/apps/{app_id}/groups/{group_id}"
-        response = requests.put(url, headers=headers, json=data)
-        return response
+        for group_id in groups:
+            url = self.config["Config"]["OKTA_ORG_URL"] + f"/api/v1/apps/{app_id}/groups/{group_id}"
+            requests.put(url, headers=headers, json=data)
+        return 
 oi = OktaAwsIntegration()
 logging.basicConfig( level=logging.INFO)
 logging.info('Starting the AWS Okta Integration.')
@@ -103,11 +104,17 @@ logging.info('Okta Application Created.')
 logging.info('Fetching XML data from the application id.')
 oi.get_xml_data(app_id=app_id)
 logging.info('XML Fetched.')
-groups = "test" #testing purpose
+
 logging.info('Creating Okta Groups')
-group_id = oi.create_okta_groups(groups=groups)
+#will be getting from jenkins currently for testing purpose only
+groups = [
+                            {"name": "Groupa", "description": "Description for Group1"},
+                            {"name": "Groupb", "description": "Description for Group2"},
+                            {"name": "Groupc", "description": "Description for Group3"}
+                           ]
+groups = oi.create_okta_groups(groups=groups)
 logging.info('Okta Group Created.')
 
 logging.info('Association of group to okta application.')
-oi.associate_grps_with_okta_application(group_id=group_id,app_id=app_id)
+oi.associate_grps_with_okta_application(groups=groups,app_id=app_id)
 logging.info('Group associated with okta application.')
