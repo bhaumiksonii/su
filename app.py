@@ -10,18 +10,49 @@ class OktaAwsIntegration:
 
         url = f'{self.config["Config"]["OKTA_ORG_URL"]}/api/v1/apps'
     
-        data ={
-    "name": "bookmark",
-    "label": "Sample Bookmark App",
-    "signOnMode": "BOOKMARK",
+        data = {
+    "name": "amazon_aws",
+    "label": "test7",
+    "signOnMode": "SAML_2_0",
     "settings": {
         "app": {
-        "requestIntegration": False,
-        "url": "https://example.com/bookmark.htm",
-        "usernameAttribute": "abul.syed@verizon.com" 
+            "appFilter": "okta",
+            "groupFilter": "^aws\\#\\S+\\#(?{{role}}[\\w\\-]+)\\#(?{{accountid}}\\d+)$",
+            "secretKey": None,
+            "webSSOAllowedClient": None,
+            "useGroupMapping": True,
+            "joinAllRoles": True,
+            "identityProviderArn": "arn:aws:iam::565322864285:saml-provider/soe-aws-operations",
+            "overrideAcsURL": None,
+            "sessionDuration": 3600,
+            "roleValuePattern": "arn:aws:iam::${accountid}:saml-provider/soe-aws-operations,arn:aws:iam::${accountid}:role/${role}",
+            "awsEnvironmentType": "aws.amazon",
+            "accessKey": None,
+            "loginURL": "https: //console.aws.amazon.com/ec2/home",
+            "secretKeyEnc": None
+        },
+        "notifications": {
+            "vpn": {
+                "network": {
+                    "connection": "DISABLED"
+                },
+                "message": None,
+                "helpUrl": None
+            }
+        },
+        "notes": {
+            "admin": None,
+            "enduser": None
+        },
+        "signOn": {
+            "defaultRelayState": None,
+            "ssoAcsUrlOverride": None,
+            "audienceOverride": None,
+            "recipientOverride": None,
+            "destinationOverride": None,
+            "attributeStatements": []
         }
-    }
-    }   
+    }}   
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'SSWS {self.config["Config"]["OKTA_API_TOKEN"]}'
@@ -107,12 +138,14 @@ logging.info('XML Fetched.')
 
 logging.info('Creating Okta Groups')
 #will be getting from jenkins currently for testing purpose only
-groups = [
-                            {"name": "Groupa", "description": "Description for Group1"},
-                            {"name": "Groupb", "description": "Description for Group2"},
-                            {"name": "Groupc", "description": "Description for Group3"}
-                           ]
+groups = [{"name":"aws#test#vz-soe-gnt-inf-shr-viewonly#565322864285","description":"testing"}]
+# groups = [
+#                             {"name": "Groupa", "description": "Description for Group1"},
+#                             {"name": "Groupb", "description": "Description for Group2"},
+#                             {"name": "Groupc", "description": "Description for Group3"}
+#                            ]
 groups = oi.create_okta_groups(groups=groups)
+print("Group id ",groups)
 logging.info('Okta Group Created.')
 
 logging.info('Association of group to okta application.')
